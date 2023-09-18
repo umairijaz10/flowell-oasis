@@ -1,0 +1,24 @@
+/* Global CSS */
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ProductList start in CSS */
+
+.product-list {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between; 
+}
+.product-list .product-item {
+  width: calc(33.33% - 10px);
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
+}
+.product-list .product-item img {
+  width: 100%;
+}
