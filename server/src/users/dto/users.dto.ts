@@ -14,3 +14,12 @@ export class RegisterDto {
     @MinLength(6)
     password: string;
 }
+
+export class LoginDto {
+    @IsEmail()
+    @IsNotEmpty()
+    email: string;
+
+    @IsNotEmpty()
+    password: string;
+}

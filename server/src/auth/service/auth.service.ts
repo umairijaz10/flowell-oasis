@@ -1,50 +1,55 @@
 // Modules
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
-import { PassportLocalModel } from 'passport-local';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Injectable, ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
+import { JwtService } from '@nestjs/jwt';
 
 // Model
-import { User } from '../model/user.model';
+import { User } from '../../users/model/user.model';
+
+// Services
+import { UserService } from '../../users/service/user.service'
 
 // Dto
-import { RegisterDto } from '../dto/register.dto';
+import { RegisterDto } from '../../users/dto/users.dto';
 
 @Injectable()
 export class AuthService {
-    constructor(@InjectModel(User.name) private readonly userModel: Model<User>) {}
+    constructor(
+        private userService: UserService,
+        private jwtService: JwtService
+    ) {}
 
-    async validateUser(username: string, password: string): Promise<User | null> {
-        const user = await this.userModel.findOne({ username });
+    async validateUser(email: string, password: string): Promise<any> {
+        const user = await this.userService.findByEmail(email);
 
-        if (!user) {
-            throw new UnauthorizedException('Invalid credentials');
+        if (user && bcrypt.compareSync(password, user.password)) {
+            const { password, ...result } = user;
+            return result;
         }
 
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-
-        if (!isPasswordValid) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
-
-        return user.toObject();
-
-        //return result;
+        return null;
     }
 
     async register(registerDto: RegisterDto): Promise<User> {
         const { username, email, password } = registerDto;
-        const existingUser = await this.userModel.findOne({ $or: [{ username }, { email }] });
+        const existingUser = await this.userService.findOne({ $or: [{ username }, { email }] });
 
         if (existingUser) {
             throw new ConflictException('Username or email already exists');
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new this.userModel({ username, email, password: hashedPassword });
+        const newUser = await this.userService.createUser({ username, email, password: hashedPassword });
 
-        return newUser.save();
+        return newUser;
 
+    }
+
+    async login(user: any) {
+        const payload = { username: user.username, sub: user._id };
+
+        return {
+            access_token: this.jwtService.sign(payload, ),
+        };
     }
 }
